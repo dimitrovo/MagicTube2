@@ -1,0 +1,45 @@
+# Ардуіно специфічне
+*.ino.*
+*.d
+*.elf
+*.bin
+*.hex
+*.eep
+*.map
+*.lst
+*.bak
+*.tmp
+
+# Arduino IDE / плата
+.build/
+.pio/
+.pioenvs/
+libdeps/
+.vscode/
+.idea/
+
+# Файли компіляції ESP32
+*.o
+*.a
+*.ld
+*.log
+
+# Кеші та тимчасові файли
+*.log
+*.sdf
+*.suo
+*.db
+*.db-wal
+*.db-shm
+
+# MacOS специфічне (на всякий випадок)
+.DS_Store
+
+# Windows специфічне
+Thumbs.db
+ehthumbs.db
+desktop.ini
+
+# OneDrive специфічне
+~$*
+*.tmp
