@@ -1,45 +1,39 @@
-# Ардуіно специфічне
-*.ino.*
-*.d
-*.elf
+# --- Android Studio ---
+*.iml
+.idea/
+.gradle/
+local.properties
+.DS_Store
+build/
+captures/
+.cxx/
+.externalNativeBuild/
+.navigation/
+*.kotlin_module
+*.log
+*.apk
+*.ap_
+google-services.json
+app/google-services.json
+signing.properties
+obj/
+
+# --- Gradle Wrapper ---
+!gradle/wrapper/gradle-wrapper.jar
+gradle-wrapper.properties
+
+# --- Arduino/ESP ---
 *.bin
 *.hex
-*.eep
+*.elf
 *.map
-*.lst
-*.bak
-*.tmp
-
-# Arduino IDE / плата
-.build/
-.pio/
-.pioenvs/
-libdeps/
-.vscode/
-.idea/
-
-# Файли компіляції ESP32
+*.d
 *.o
-*.a
-*.ld
-*.log
+.pio/
+.vscode/
+__pycache__/
 
-# Кеші та тимчасові файли
-*.log
-*.sdf
-*.suo
-*.db
-*.db-wal
-*.db-shm
-
-# MacOS специфічне (на всякий випадок)
-.DS_Store
-
-# Windows специфічне
+# --- OS-generated ---
 Thumbs.db
 ehthumbs.db
-desktop.ini
-
-# OneDrive специфічне
-~$*
-*.tmp
+Desktop.ini
