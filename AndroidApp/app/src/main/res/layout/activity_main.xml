@@ -6,6 +6,17 @@
     android:layout_height="match_parent"
     android:padding="16dp">
 
+    <!-- 🔌 Статус BLE -->
+    <TextView
+        android:id="@+id/statusText"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Connecting..."
+        android:textSize="18sp"
+        android:textColor="#888888"
+        android:padding="8dp" />
+
+    <!-- 📈 Частота -->
     <TextView
         android:id="@+id/frequencyText"
         android:layout_width="wrap_content"
@@ -15,6 +26,7 @@
         android:textStyle="bold"
         android:padding="24dp" />
 
+    <!-- 🎛️ Вибір частоти -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
