@@ -2,19 +2,23 @@
 #include "driver/ledc.h"      // Library ESP32 LEDC
 #include "driver/pcnt.h"      // Library ESP32 PCNT
 #include "soc/pcnt_struct.h"  // Library ESP32 PCNT
-#include "esp32/rom/gpio.h"   // Library ESP32 GPIO
+//#include "esp32/rom/gpio.h"   // Library ESP32 GPIO
 #include <BLEDevice.h>
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
 
+#ifndef LEDC_HIGH_SPEED_MODE            // на C3 його нема
+#define LEDC_HIGH_SPEED_MODE LEDC_LOW_SPEED_MODE
+#endif
+
 #define PCNT_COUNT_UNIT PCNT_UNIT_0        // Set Pulse Counter Unit - 0
 #define PCNT_COUNT_CHANNEL PCNT_CHANNEL_0  // Set Pulse Counter channel - 0
 
-#define PCNT_INPUT_SIG_IO GPIO_NUM_34    // Set Pulse Counter input - Freq Meter Input GPIO 34
-#define LEDC_HS_CH0_GPIO GPIO_NUM_33     // LEDC output - pulse generator - GPIO_33
-#define PCNT_INPUT_CTRL_IO GPIO_NUM_35   // Set Pulse Counter Control GPIO pin - HIGH = count up, LOW = count down
-#define OUTPUT_CONTROL_GPIO GPIO_NUM_32  // Timer output control port - GPIO_32
+#define PCNT_INPUT_SIG_IO GPIO_NUM_10    // Set Pulse Counter input - Freq Meter Input GPIO 34
+#define LEDC_HS_CH0_GPIO GPIO_NUM_9     // LEDC output - pulse generator - GPIO_33
+#define PCNT_INPUT_CTRL_IO GPIO_NUM_11   // Set Pulse Counter Control GPIO pin - HIGH = count up, LOW = count down
+#define OUTPUT_CONTROL_GPIO GPIO_NUM_8  // Timer output control port - GPIO_32
 #define PCNT_H_LIM_VAL overflow          // Overflow of Pulse Counter
 
 #define BLE_SERVICE_UUID     "12345678-1234-1234-1234-1234567890ab"
@@ -102,7 +106,15 @@ void read_PCNT(void *p)
 void init_frequencyMeter() {
   init_osc_freq();
   init_PCNT();
-  gpio_pad_select_gpio(OUTPUT_CONTROL_GPIO);
+  
+
+#if CONFIG_IDF_TARGET_ESP32 // класична ESP32		
+gpio_pad_select_gpio(OUTPUT_CONTROL_GPIO);		
+#else // S3, C3, C6 …		
+gpio_reset_pin((gpio_num_t)OUTPUT_CONTROL_GPIO);		
+#endif
+
+
   gpio_set_direction(OUTPUT_CONTROL_GPIO, GPIO_MODE_OUTPUT);
   create_args.callback = read_PCNT;
   esp_timer_create(&create_args, &timer_handle);
