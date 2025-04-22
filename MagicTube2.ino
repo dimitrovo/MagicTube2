@@ -1,3 +1,4 @@
+////------------Remove ArduinoBLE library-------------------------///
 #include "stdio.h"            // Library STDIO
 #include "driver/ledc.h"      // Library ESP32 LEDC
 #include "driver/pcnt.h"      // Library ESP32 PCNT
@@ -7,8 +8,34 @@
 #include <BLEServer.h>
 #include <BLEUtils.h>
 #include <BLE2902.h>
+#include <Wire.h>
 
-#ifndef LEDC_HIGH_SPEED_MODE            // на C3 його нема
+#define I2C_SDA 6
+#define I2C_SCL 7
+//--------------------RDA5807 -------------------------------------------------
+#define RDA5807M_RANDOM_ACCESS_ADDRESS 0x11
+// Registers
+#define RDA5807M_REG_CONFIG 0x02
+#define RDA5807M_REG_TUNING 0x03
+#define RDA5807M_REG_VOLUME 0x05
+#define RDA5807M_REG_RSSI   0x0B
+// FLAGS
+#define RDA5807M_FLG_DHIZ 0x8000 
+#define RDA5807M_FLG_DMUTE 0x4000  
+#define RDA5807M_FLG_BASS 0x1000
+#define RDA5807M_FLG_ENABLE word(0x0001) 
+#define RDA5807M_FLG_TUNE word(0x0010)
+#define RDA5807M_FLG_MONO 0x2000 
+#define RDA5807M_BIT_MUTE 14
+// MASKS
+#define RDA5807M_CHAN_MASK 0xFFC0
+#define RDA5807M_CHAN_SHIFT 6
+#define RDA5807M_VOLUME_MASK word(0x000F)
+#define RDA5807M_VOLUME_SHIFT 0
+#define RDA5807M_RSSI_MASK 0xFE00
+#define RDA5807M_RSSI_SHIFT 9
+
+#ifndef LEDC_HIGH_SPEED_MODE            
 #define LEDC_HIGH_SPEED_MODE LEDC_LOW_SPEED_MODE
 #endif
 
@@ -30,7 +57,7 @@ uint32_t overflow = 20000;       // Max Pulse Counter value 20000
 int16_t pulses = 0;              // Pulse Counter value
 uint32_t multPulses = 0;         // Number of PCNT counter overflows
 uint32_t sample_time = 100000;  // Sample time of 1 second to count pulses (change the value to calibrate frequency meter)
-uint32_t osc_freq = 1000000;       // Oscillator frequency - initial 16000 Hz (may be 1 Hz to 40 MHz)
+uint32_t osc_freq = 465000;       // Oscillator frequency - initial 16000 Hz (may be 1 Hz to 40 MHz)
 uint32_t mDuty = 0;              // Duty value
 uint32_t resolution = 0;         // Resolution value of Oscillator
 float frequency = 0;             // frequency value
@@ -131,7 +158,7 @@ void setGeneratorFreq(uint32_t hz) {
 class SetFreqCallback : public BLECharacteristicCallbacks {
   void onWrite(BLECharacteristic* pCharacteristic) override {
     int freq = atoi(pCharacteristic->getValue().c_str());
-    setGeneratorFreq(freq);
+    setGeneratorFreq(freq*1000);
   }
 };
 
@@ -139,6 +166,11 @@ void setup() {
   Serial.begin(115200);
   delay(1000);
   Serial.println("🚀 Starting frequency monitor...");
+
+  Wire.begin(I2C_SDA, I2C_SCL, 100000);
+  setupRDA5807();
+  setRDA5807frequency(1015);
+  setRDA5807volume(15); 
 
   BLEDevice::init("MagicTube2");
   BLEServer* server = BLEDevice::createServer();
@@ -189,4 +221,54 @@ void loop() {
     freqChar->notify();
     lastNotify = now;
   }
+}
+
+
+
+
+void setRegister(uint8_t reg, const uint16_t value) {
+  Wire.beginTransmission(0x11);
+  Wire.write(reg);
+  Wire.write(highByte(value));
+  Wire.write(lowByte(value));
+  Wire.endTransmission(true);
+}
+ 
+uint16_t getRegister(uint8_t reg) {
+  uint16_t result;
+  Wire.beginTransmission(RDA5807M_RANDOM_ACCESS_ADDRESS);
+  Wire.write(reg);
+  Wire.endTransmission(false);
+  Wire.requestFrom(0x11, 2, true);
+  result = (uint16_t)Wire.read() << 8;
+  result |= Wire.read();
+  return result;
+}
+
+void setupRDA5807()
+{
+uint16_t reg02h, reg03h, reg05h, reg0Bh;
+  reg02h = RDA5807M_FLG_ENABLE | RDA5807M_FLG_DHIZ | RDA5807M_FLG_DMUTE;
+  setRegister(RDA5807M_REG_CONFIG, reg02h);
+  reg02h |= RDA5807M_FLG_BASS; 
+  setRegister(RDA5807M_REG_CONFIG, reg02h);
+  reg02h |= RDA5807M_FLG_MONO; 
+  setRegister(RDA5807M_REG_CONFIG, reg02h);
+}
+
+void setRDA5807frequency(uint16_t freq)
+{
+uint16_t reg02h, reg03h, reg05h, reg0Bh;
+  reg03h = (freq - 870) << RDA5807M_CHAN_SHIFT; 
+  setRegister(RDA5807M_REG_TUNING, reg03h | RDA5807M_FLG_TUNE);
+}
+
+
+void setRDA5807volume(uint8_t v)
+{
+  uint16_t reg02h, reg03h, reg05h, reg0Bh;
+  reg05h = getRegister(RDA5807M_REG_VOLUME); 
+  reg05h &= ~RDA5807M_VOLUME_MASK; 
+  reg05h |= v << RDA5807M_VOLUME_SHIFT; 
+  setRegister(RDA5807M_REG_VOLUME, reg05h);
 }
